@@ -44,6 +44,18 @@ func TestRemove(t *testing.T) {
 	}
 }
 
+func TestRemoveNonExistent(t *testing.T) {
+	// Removing a port that was never added should be a no-op.
+	b, _ := baseline.New(tempPath(t))
+	b.Remove(9999)
+	if b.Contains(9999) {
+		t.Error("expected port 9999 to not be in baseline after removing non-existent entry")
+	}
+	if len(b.All()) != 0 {
+		t.Errorf("expected empty baseline after removing non-existent port, got %d entries", len(b.All()))
+	}
+}
+
 func TestSaveAndLoad(t *testing.T) {
 	path := tempPath(t)
 	b, _ := baseline.New(path)
