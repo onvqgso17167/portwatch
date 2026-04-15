@@ -23,18 +23,27 @@ func NewPrinter(w io.Writer) *Printer {
 }
 
 // Print writes a formatted table of active suppression entries.
+// Entries that have already expired are skipped.
 func (p *Printer) Print(entries []Entry) {
 	if len(entries) == 0 {
 		fmt.Fprintln(p.w, "No active suppressions.")
 		return
 	}
+	now := time.Now()
 	tw := tabwriter.NewWriter(p.w, 0, 0, 2, ' ', 0)
 	fmt.Fprintln(tw, "PORT\tREASON\tEXPIRES IN")
 	fmt.Fprintln(tw, "----\t------\t----------")
-	now := time.Now()
+	printed := 0
 	for _, e := range entries {
 		remaining := e.ExpiresAt.Sub(now).Truncate(time.Second)
+		if remaining <= 0 {
+			continue
+		}
 		fmt.Fprintf(tw, "%d\t%s\t%s\n", e.Port, e.Reason, remaining)
+		printed++
 	}
 	tw.Flush()
+	if printed == 0 {
+		fmt.Fprintln(p.w, "No active suppressions.")
+	}
 }
