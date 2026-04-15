@@ -45,6 +45,16 @@ func TestSummaryWithPorts(t *testing.T) {
 	}
 }
 
+func TestSummaryEmptySlice(t *testing.T) {
+	var buf bytes.Buffer
+	r := New(&buf)
+	r.Summary([]scanner.Result{})
+
+	if !strings.Contains(buf.String(), "No open ports") {
+		t.Errorf("expected 'No open ports' for empty slice, got: %s", buf.String())
+	}
+}
+
 func TestReportError(t *testing.T) {
 	var buf bytes.Buffer
 	r := New(&buf)
