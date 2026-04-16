@@ -44,3 +44,43 @@ func (r *Reporter) ReportError(err error) {
 	}
 	fmt.Fprintf(r.out, "[portwatch] ERROR: %v\n", err)
 }
+
+// ReportChanges prints a diff between two consecutive scans, highlighting
+// ports that were opened or closed since the previous scan.
+func (r *Reporter) ReportChanges(previous, current []scanner.Result) {
+	opened, closed := diffResults(previous, current)
+	if len(opened) == 0 && len(closed) == 0 {
+		return
+	}
+	fmt.Fprintf(r.out, "[portwatch] Changes detected at %s:\n", time.Now().Format(time.RFC3339))
+	for _, res := range opened {
+		fmt.Fprintf(r.out, "  + %-6d %s\n", res.Port, res.Address)
+	}
+	for _, res := range closed {
+		fmt.Fprintf(r.out, "  - %-6d %s\n", res.Port, res.Address)
+	}
+}
+
+// diffResults returns ports that were opened (in current but not previous)
+// and ports that were closed (in previous but not current).
+func diffResults(previous, current []scanner.Result) (opened, closed []scanner.Result) {
+	prev := make(map[int]struct{}, len(previous))
+	for _, r := range previous {
+		prev[r.Port] = struct{}{}
+	}
+	curr := make(map[int]struct{}, len(current))
+	for _, r := range current {
+		curr[r.Port] = struct{}{}
+	}
+	for _, r := range current {
+		if _, ok := prev[r.Port]; !ok {
+			opened = append(opened, r)
+		}
+	}
+	for _, r := range previous {
+		if _, ok := curr[r.Port]; !ok {
+			closed = append(closed, r)
+		}
+	}
+	return
+}
