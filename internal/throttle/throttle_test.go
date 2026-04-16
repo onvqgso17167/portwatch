@@ -71,3 +71,17 @@ func TestZeroCooldownAlwaysAllows(t *testing.T) {
 		t.Fatal("expected zero cooldown to always allow")
 	}
 }
+
+func TestAllowExactlyAtCooldownBoundary(t *testing.T) {
+	th := throttle.New(1 * time.Minute)
+	now := time.Now()
+	th.Allow("key1", now)
+	// Exactly at the cooldown boundary should still be suppressed.
+	if th.Allow("key1", now.Add(1*time.Minute)) {
+		t.Fatal("expected call exactly at cooldown boundary to be suppressed")
+	}
+	// One nanosecond past the boundary should be allowed.
+	if !th.Allow("key1", now.Add(1*time.Minute+1*time.Nanosecond)) {
+		t.Fatal("expected call just past cooldown boundary to be allowed")
+	}
+}
