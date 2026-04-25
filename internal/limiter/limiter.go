@@ -28,6 +28,17 @@ func (l *Limiter) Acquire() {
 	l.sem <- struct{}{}
 }
 
+// TryAcquire attempts to claim a slot without blocking. It returns true if a
+// slot was successfully acquired, or false if all slots are currently in use.
+func (l *Limiter) TryAcquire() bool {
+	select {
+	case l.sem <- struct{}{}:
+		return true
+	default:
+		return false
+	}
+}
+
 // Release frees a previously acquired slot.
 func (l *Limiter) Release() {
 	<-l.sem
